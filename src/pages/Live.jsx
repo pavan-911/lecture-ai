@@ -85,12 +85,7 @@ export default function Live() {
   }
 
   async function startCapture() {
-    import { useState, useRef, useEffect } from 'react'
-import { Mic, MicOff, Monitor, MonitorOff, Circle, Square, Camera } from 'lucide-react'
-import { db } from '../firebase'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-import { useAuth } from '../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
+    
 
 const EXAM_KEYWORDS = [
   'remember', 'important', 'exam', 'write this',
