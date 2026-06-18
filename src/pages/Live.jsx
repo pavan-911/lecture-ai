@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Mic, MicOff, Monitor, MonitorOff, Circle, Square } from 'lucide-react'
+import { Mic, MicOff, Monitor, MonitorOff, Circle, Square, Camera } from 'lucide-react'
 import { db } from '../firebase'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { useAuth } from '../context/AuthContext'
@@ -233,6 +233,7 @@ export default function Live() {
       setScreenAnalysisCount(0)
 
       timerRef.current = setInterval(() => setTimer(t => t + 1), 1000)
+
       startSpeechRecognition()
 
       // Take screen snapshot every 15 seconds
