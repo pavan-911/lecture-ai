@@ -162,43 +162,49 @@ export default function Live() {
   }
 
   async function captureScreenSnapshot() {
-    if (!videoRef.current || !canvasRef.current) return
-    const video = videoRef.current
-    const canvas = canvasRef.current
+    async function captureScreenSnapshot() {
+  if (!canvasRef.current) return
+  if (!screenStreamRef.current) return
 
-    if (video.readyState < 2) return
+  const video = videoRef.current
+  const canvas = canvasRef.current
 
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
-    ctx.drawImage(video, 0, 0)
+  if (!video || video.videoWidth === 0) return
 
-    // Check if screen changed significantly
-    const imageData = canvas.toDataURL('image/jpeg', 0.6)
-    if (imageData === lastSnapshotRef.current) return
-    lastSnapshotRef.current = imageData
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(video, 0, 0)
 
-    const base64 = imageData.split(',')[1]
+  const imageData = canvas.toDataURL('image/jpeg', 0.7)
+  if (!imageData || imageData.length < 1000) return
+  if (imageData === lastSnapshotRef.current) return
+  lastSnapshotRef.current = imageData
 
-    try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
-      const res = await fetch(`${backendUrl}/api/analyze-screen`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageBase64: base64,
-          context: transcriptRef.current.slice(-3).join(' ')
-        })
+  const base64 = imageData.split(',')[1]
+  if (!base64) return
+
+  try {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
+    const res = await fetch(`${backendUrl}/api/analyze-screen`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        imageBase64: base64,
+        context: transcriptRef.current.slice(-3).join(' ')
       })
-      const data = await res.json()
+    })
+    const data = await res.json()
+    console.log('Screen analysis:', data)
 
-      if (data.hasContent && data.isNewContent) {
-        setScreenSnapshots(prev => [...prev, data])
-        setScreenAnalysisCount(c => c + 1)
-      }
-    } catch (err) {
-      console.error('Screen analysis error:', err)
+    if (data.hasContent) {
+      setScreenSnapshots(prev => [...prev, data])
+      setScreenAnalysisCount(c => c + 1)
     }
+  } catch (err) {
+    console.error('Screen analysis error:', err)
+  }
+}
   }
 
   async function startCapture() {
@@ -213,9 +219,11 @@ export default function Live() {
 
       // Connect screen stream to video element for snapshots
       if (videoRef.current) {
-        videoRef.current.srcObject = screenStream
-        videoRef.current.play()
-      }
+  videoRef.current.srcObject = screenStream
+  await videoRef.current.play()
+  // Take first snapshot after 3 seconds
+  setTimeout(captureScreenSnapshot, 3000)
+}
 
       setIsRecording(true)
       setSaved(false)
